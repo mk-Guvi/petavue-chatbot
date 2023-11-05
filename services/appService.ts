@@ -29,10 +29,12 @@ class AppServicer {
     try {
       const userDetails = localStorage.getItem(
         STORAGE_KEYS.PETA_CHAT_USER
-      ) as ChatbotUserT | null;
-      if (userDetails?.anonymous_id) {
-        dispatch(updateChatbotData({ userDetails }));
-        return userDetails;
+      ) 
+
+      if (userDetails) {
+        const parsedUserdDetails=JSON.parse(userDetails)as ChatbotUserT 
+        dispatch(updateChatbotData({ userDetails:parsedUserdDetails }));
+        return parsedUserdDetails;
       }
       return null;
     } catch (e) {
