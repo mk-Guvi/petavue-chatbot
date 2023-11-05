@@ -1,20 +1,34 @@
-import { createSlice, Slice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction, Slice } from "@reduxjs/toolkit";
 import { reset } from "../actions";
 
 // Define the type for your initial state
-export type GlobalSliceStateT = {};
-type GlobalSliceT = Slice<GlobalSliceStateT, {}, "global">;
+export type ChatBotStateT={
+  open:boolean
+  route:"messages"
+}
+export type GlobalSliceStateT = {
+  chatbot:ChatBotStateT
+};
+type GlobalSliceT = Slice<GlobalSliceStateT, {
+  updateChatbotData: (state: GlobalSliceStateT,action:PayloadAction<Partial<ChatBotStateT>>) => void;
+}, "global">;
 
 const initialState: GlobalSliceStateT = {
-  loginModal: {
-    isLoginModalOpen: false,
+  chatbot: {
+    open:false,
+    route:"messages"
   },
 };
 
 const globalSlice: GlobalSliceT = createSlice({
   name: "global",
   initialState, // Use the explicitly typed initialState here
-  reducers: {},
+  reducers: {
+    
+    updateChatbotData: (state, action) => {
+      state.chatbot = {...state.chatbot,...action.payload}
+    },
+  },
   extraReducers(builder) {
     builder.addCase(reset, () => {
       return initialState;
@@ -22,6 +36,6 @@ const globalSlice: GlobalSliceT = createSlice({
   },
 });
 
-export const {} = globalSlice.actions;
+export const {updateChatbotData} = globalSlice.actions;
 
 export default globalSlice.reducer;
