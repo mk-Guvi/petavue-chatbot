@@ -1,0 +1,3 @@
+export const STORAGE_KEYS = {
+ PETA_CHAT_USER:"PETA_CHAT_USER"
+};

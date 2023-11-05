@@ -1,5 +1,6 @@
 import { ChatBot } from '@/components'
 import store from '@/redux/store'
+import { useChatbotPingService } from '@/services/hooks'
 import '@/styles/globals.css'
 import type { AppProps } from 'next/app'
 import { Fragment } from 'react'
