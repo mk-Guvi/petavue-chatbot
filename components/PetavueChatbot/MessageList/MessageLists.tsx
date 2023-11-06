@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useRef, useState } from 'react'
+import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { CircularLoader, H5, Icon, LargeText, SmallText } from '../..'
 import { useChatbot } from '@/services/hooks'
 
@@ -10,6 +10,7 @@ import ListItem from './ListItem'
 
 import { arrayToObject } from '@/utils'
 import tw from 'tailwind-styled-components'
+import Link from 'next/link'
 
 type PageDetailsT = {
   type?: 'pages'
@@ -111,6 +112,10 @@ function MessageList() {
   const addNewConversation = () => {
     updateChatbotDetails({ route: 'new-message' })
   }
+
+  const interComurl = useMemo(() => {
+    return `https://www.intercom.com/intercom-link?user_id=${chatbot?.userDetails?.id}&powered_by_app_id=uudolkfi&company=Dev&solution=live-chat`
+  }, [chatbot?.userDetails])
   return (
     <Fragment>
       <Header>
@@ -154,16 +159,17 @@ function MessageList() {
         </SmallText>
         <Icon icon="help-circle" className="p-0.5 " />
       </AddQuestionContainer>
-
-      <Footer>
-        <ChatbotSvg className="p-1 fill-gray-600" />
-        <SmallText>{LANG.CHATBOT.POWERED_BY}</SmallText>
-      </Footer>
+      <Link href={interComurl} target="_blank">
+        <Footer>
+          <ChatbotSvg className="p-1 fill-gray-600" />
+          <SmallText>{LANG.CHATBOT.POWERED_BY}</SmallText>
+        </Footer>
+      </Link>
     </Fragment>
   )
 }
 
 export default MessageList
-const Footer = tw.footer`p-2 items-center gap-2 bg-gray-100 sm:rounded-b-lg text-gray-600 flex justify-center`
+const Footer = tw.footer`p-2 cursor-pointer hover:bg-gray-200 items-center gap-2 bg-gray-100 sm:rounded-b-lg text-gray-600 flex justify-center`
 const Header = tw.header`bg-blue-800 sm:rounded-t-xl p-4 flex gap-2  items-center text-white`
 const AddQuestionContainer = tw.div`absolute z-20 bottom-16 px-3 rounded-lg text-white left-1/2 transform -translate-x-1/2 bg-blue-700 hover:bg-blue-500 cursor-pointer  inline-flex gap-2 p-2`
