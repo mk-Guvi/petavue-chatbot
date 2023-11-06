@@ -18,24 +18,24 @@ export const H4 = tw.h4`
 export const H5 = tw.h5`
   text-xl font-semibold break-words
 `
-export const ExtraLargeText = tw.p`
+export const ExtraLargeText = tw.div`
   text-xl font-medium break-words
 `
 
-export const LargeText = tw.p`
+export const LargeText = tw.div`
   text-lg font-medium break-words
 `
 
-export const MediumText = tw.p`
+export const MediumText = tw.div`
   text-base font-normal break-words
 `
 
-export const SmallText = tw.p`
+export const SmallText = tw.div`
 break-words
 text-sm
 `
 
-export const ExtraSmallText = tw.p`
+export const ExtraSmallText = tw.div`
   text-xs
   break-words
 

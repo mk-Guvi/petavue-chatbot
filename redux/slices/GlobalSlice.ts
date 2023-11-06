@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction, Slice } from "@reduxjs/toolkit";
 import { reset } from "../actions";
+import { ConversationT } from "@/components/PetavueChatbot/Chatbot.types";
 
 export type ChatbotUserT={
   id?: string;
@@ -19,9 +20,11 @@ export type ChatbotUserT={
 // Define the type for your initial state
 export type ChatBotStateT={
   open:boolean
-  route:"messages",
+  route:"messages"|"new-message",
   userDetails:ChatbotUserT
   showChatbot:boolean
+  conversations:ConversationT[]
+  
 }
 export type GlobalSliceStateT = {
   chatbot:ChatBotStateT
@@ -32,6 +35,7 @@ type GlobalSliceT = Slice<GlobalSliceStateT, {
 
 const initialState: GlobalSliceStateT = {
   chatbot: {
+    conversations:[],
     open:false,
 
     showChatbot:false,

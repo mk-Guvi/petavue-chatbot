@@ -1,15 +1,28 @@
 import React from 'react'
 import { Icon } from '..'
 import { useChatbot } from '@/services/hooks'
+import { LANG } from '@/constants'
+import { LargeText, SmallText } from '..'
+import { MessageSvg } from './ChatbotSvg'
+
+export const NoMessagesPlaceholder = () => {
+  return (
+    <div className=" justify-center m-auto items-center flex flex-col gap-2">
+      <MessageSvg />
+      <LargeText>{LANG.CHATBOT.NO_MESSAGES}</LargeText>
+      <SmallText>{LANG.CHATBOT.MESSAGES_FROM_TEAM}</SmallText>
+    </div>
+  )
+}
 
 export const ChatBotIcon = () => {
-  const { chatbot, updateChatbotDetails } = useChatbot()
-  const toggleChat = () => {
-    updateChatbotDetails({ open: !chatbot.open })
-  }
+  const { chatbot, toggleChat } = useChatbot()
+
   return (
     <div
-      className={`fixed   h-12 w-12   text-white flex place-items-center  rounded-full drop-shadow-lg hover:scale-110 transition-all duration-200 bg-blue-500 z-50 bottom-6 right-6 transform ${
+      className={`fixed  ${
+        chatbot?.open ? 'hidden' : ''
+      }  h-12 w-12   text-white sm:flex place-items-center  rounded-full drop-shadow-lg hover:scale-110 transition-all duration-200 bg-blue-500 z-50 bottom-6 right-6 transform ${
         chatbot.open ? 'rotate-180 ' : ''
       } p-3`}
       onClick={toggleChat}

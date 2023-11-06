@@ -34,14 +34,16 @@ export const convertLocalDateToUTC = (localDate: string, inputFormat: string, ou
   return utcDate;
 };
 
-export const getLastPublished = (utcTimeStamp: string) => {
-  const formattedDate = formatUTCDate(utcTimeStamp, 'YYYY-MM-DD HH:mm:ss');
-  const currentDate = dayjs();
 
-  const timeDifferenceMinutes = getDifferenceInDates({
-    endDate: currentDate.toDate(),
-    startDate: dayjs(formattedDate).toDate(),
-  });
+import relativeTime from 'dayjs/plugin/relativeTime';
+
+dayjs.extend(relativeTime);
+
+export const getLastSeen = (timestampInSeconds: number) => {
+  const currentDate = dayjs();
+  const utcTimestamp = dayjs.unix(timestampInSeconds);
+
+  const timeDifferenceMinutes = currentDate.diff(utcTimestamp, 'minute');
 
   if (timeDifferenceMinutes < 1) {
     return 'Just now';
@@ -61,6 +63,7 @@ export const getLastPublished = (utcTimeStamp: string) => {
     return `${years} year${years !== 1 ? 's' : ''} ago`;
   }
 };
+
 
 export type DateAndTimeFormatsKeysT = 'DATE' | 'TIME' | 'DATETIME';
 

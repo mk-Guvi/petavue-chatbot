@@ -1,8 +1,9 @@
 import React, { Fragment } from 'react'
-import { ChatBotIcon } from './ChatbotIcon'
+
 import ChatbotContainer from './ChatbotContainer'
 import { useGlobalData } from '@/redux/selectors'
 import { useChatbotPingService } from '@/services/hooks'
+import { ChatBotIcon } from './components'
 
 export function ChatBot() {
   useChatbotPingService()

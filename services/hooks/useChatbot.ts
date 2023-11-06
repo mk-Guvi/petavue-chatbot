@@ -10,9 +10,14 @@ import { appService } from "../appService";
 export const useChatbot = () => {
   const { chatbot } = useGlobalData();
   const dispatch = useDispatch();
+  
   const updateChatbotDetails = (payload: Partial<ChatBotStateT>) => {
     dispatch(updateChatbotData(payload));
   };
+
+  const toggleChat = () => {
+    updateChatbotDetails({ open: !chatbot.open })
+  }
   const getCommonPayload = () => {
     let payload: Record<string, any> = {
       app_id: "uudolkfi",
@@ -21,29 +26,31 @@ export const useChatbot = () => {
       s: "d80da787-c5dd-43a7-846f-7b414cdbcae3",
       "Idempotency-Key": "2d1347f813d62817",
       referer: generateBaseUrl(),
+      user_data:JSON.stringify({"anonymous_id":"b48b2ba0-54da-4d51-b256-95d19f73c3ff"})
     };
-    let anonymous_id = "";
-    if (chatbot?.userDetails?.anonymous_id) {
-      anonymous_id = chatbot?.userDetails?.anonymous_id;
-    } else {
-      let userDetails = appService?.getUserDetails();
-      if (userDetails?.anonymous_id) {
-        updateChatbotDetails({ userDetails });
-        anonymous_id = userDetails?.anonymous_id;
-      }
-    }
+    // let anonymous_id = "";
+    // if (chatbot?.userDetails?.anonymous_id) {
+    //   anonymous_id = chatbot?.userDetails?.anonymous_id;
+    // } else {
+    //   let userDetails = appService?.getUserDetails();
+    //   if (userDetails?.anonymous_id) {
+    //     updateChatbotDetails({ userDetails });
+    //     anonymous_id = userDetails?.anonymous_id;
+    //   }
+    // }
 
-    if (anonymous_id) {
-      payload["user_data"] = JSON.stringify({
-        anonymous_id,
-      });
-    }
+    // if (anonymous_id) {
+    //   payload["user_data"] = JSON.stringify({
+    //     anonymous_id,
+    //   });
+    // }
     return payload;
   };
   return {
     chatbot,
     updateChatbotDetails,
     getCommonPayload,
+    toggleChat
   };
 };
 
