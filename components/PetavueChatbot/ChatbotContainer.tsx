@@ -2,6 +2,7 @@ import { useChatbot } from '@/services/hooks'
 import React from 'react'
 import MessageList from './MessageList/MessageLists'
 import NewConversation from './NewConversation'
+import Chatview from './Chatview'
 
 function ChatbotContainer() {
   const { chatbot } = useChatbot()
@@ -11,7 +12,9 @@ function ChatbotContainer() {
         <MessageList />
       ) : chatbot?.route === 'new-message' ? (
         <NewConversation />
-      ) : null}
+      ) : (
+        <Chatview />
+      )}
     </div>
   ) : null
 }

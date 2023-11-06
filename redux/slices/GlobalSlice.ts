@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction, Slice } from "@reduxjs/toolkit";
 import { reset } from "../actions";
-import { ConversationT } from "@/components/PetavueChatbot/Chatbot.types";
+import { ComposerSuggestionT, ConversationT, NewConversationT } from "@/components/PetavueChatbot/Chatbot.types";
+import { LANG } from "@/constants";
 
 export type ChatbotUserT={
   id?: string;
@@ -16,27 +17,37 @@ export type ChatbotUserT={
   prevent_multiple_inbound_conversation?: boolean;
   user_assignments?: Record<string, any>;
 };
-
+type NewConversationStateT={
+  defaultMessage?:ConversationT
+  
+}
 // Define the type for your initial state
 export type ChatBotStateT={
   open:boolean
-  route:"messages"|"new-message",
+  route:"messages"|"new-message"|"chat-view",
   userDetails:ChatbotUserT
   showChatbot:boolean
   conversations:ConversationT[]
-  
+  composerSuggestions?:ComposerSuggestionT
+  newConversation?:NewConversationT,
+  newConversationState:NewConversationStateT,
+  chatView?:ConversationT
 }
 export type GlobalSliceStateT = {
   chatbot:ChatBotStateT
 };
 type GlobalSliceT = Slice<GlobalSliceStateT, {
   updateChatbotData: (state: GlobalSliceStateT,action:PayloadAction<Partial<ChatBotStateT>>) => void;
+  updateNewConversationData: (state: GlobalSliceStateT,action:PayloadAction<Partial<NewConversationStateT>>) => void;
 }, "global">;
 
 const initialState: GlobalSliceStateT = {
   chatbot: {
     conversations:[],
     open:false,
+    newConversationState:{
+      
+    },
 
     showChatbot:false,
     route:"messages",
@@ -52,6 +63,10 @@ const globalSlice: GlobalSliceT = createSlice({
     updateChatbotData: (state, action) => {
       state.chatbot = {...state.chatbot,...action.payload}
     },
+    updateNewConversationData(state, action) {
+     state.chatbot.newConversationState={...state.chatbot.newConversationState,...action.payload} 
+    }
+    
   },
   extraReducers(builder) {
     builder.addCase(reset, () => {
@@ -60,6 +75,6 @@ const globalSlice: GlobalSliceT = createSlice({
   },
 });
 
-export const {updateChatbotData} = globalSlice.actions;
+export const {updateChatbotData,updateNewConversationData} = globalSlice.actions;
 
 export default globalSlice.reducer;

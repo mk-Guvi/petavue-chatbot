@@ -8,12 +8,14 @@ import tw from 'tailwind-styled-components'
 
 type ListItemPropT = {
   conversation: ConversationT
+  onRouteToChatview: (conversatin: ConversationT) => void
 }
 
 const htmlRegex = /<[^>]+>/g
-function ListItem({ conversation }: ListItemPropT) {
+function ListItem({ conversation, onRouteToChatview }: ListItemPropT) {
   const { value } = useMemo(() => {
     return getValue()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversation.id])
 
   /**
@@ -41,14 +43,23 @@ function ListItem({ conversation }: ListItemPropT) {
     }
   }
 
-  function getValueFromBlocks(block: BlockT) {
-    return block?.type === 'html'
-      ? block?.content?.replace(htmlRegex, '') || ''
-      : block?.text || ''
+  function getValueFromBlocks(block?: BlockT) {
+    switch (block?.type) {
+      case 'attachmentList':
+        return block?.attachments?.[0]?.name || ''
+      case 'html':
+        return block?.content?.replace(htmlRegex, '') || ''
+      default:
+        return block?.text || 'Invalid message'
+    }
   }
 
   return (
-    <ListContainer>
+    <ListContainer
+      onClick={() => {
+        onRouteToChatview(conversation)
+      }}
+    >
       <Image
         src="https://static.intercomassets.com/assets/default-avatars/fin/128-6a5eabbb84cc2b038b2afc6698ca0a974faf7adc9ea9f0fb3c3e78ac12543bc5.png"
         alt="Fin profile"
@@ -69,7 +80,7 @@ function ListItem({ conversation }: ListItemPropT) {
           </ExtraSmallText>
           <SecondaryIndicator />
           <ExtraSmallText>
-            {getLastSeen(conversation?.updated_at)}
+            {getLastSeen(conversation?.updated_at || 0)}
           </ExtraSmallText>
         </MessageMetadataContainer>
       </MessageContainer>

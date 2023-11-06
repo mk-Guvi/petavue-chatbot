@@ -27,7 +27,7 @@ export const LargeText = tw.div`
 `
 
 export const MediumText = tw.div`
-  text-base font-normal break-words
+  text-base font-medium break-words
 `
 
 export const SmallText = tw.div`

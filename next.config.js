@@ -9,6 +9,12 @@ const nextConfig = {
         port: "",
         pathname: "/assets/**",
       },
+      {
+        protocol: "https",
+        hostname: "gifs.intercomcdn.com",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
 };

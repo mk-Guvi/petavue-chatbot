@@ -1,16 +1,25 @@
-import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import React, {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { CircularLoader, H5, Icon, LargeText, SmallText } from '../..'
 import { useChatbot } from '@/services/hooks'
 
 import { ChatbotSvg } from '../ChatbotSvg'
 import { LANG, apiEndpoints } from '@/constants'
 import { backendPost } from '@/integration'
-import { NoMessagesPlaceholder } from '../components'
+import { NoMessagesPlaceholder } from '../chatbotComponents/components'
 import ListItem from './ListItem'
 
 import { arrayToObject } from '@/utils'
 import tw from 'tailwind-styled-components'
 import Link from 'next/link'
+import { ChatBotStateT, updateNewConversationData } from '@/redux/slices'
+import { ConversationT } from '../Chatbot.types'
 
 type PageDetailsT = {
   type?: 'pages'
@@ -42,6 +51,7 @@ function MessageList() {
     if (!chatbot?.conversations?.length) {
       setLoading(true)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [changeListner])
 
   useEffect(() => {
@@ -68,6 +78,7 @@ function MessageList() {
     return () => {
       observer.disconnect()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetDivRef])
 
   /**
@@ -95,7 +106,14 @@ function MessageList() {
               ...prev,
               ...(response?.data?.conversations || []),
             ]
-            return Object.values(arrayToObject(allConversations, 'id')) //prevents duplicates
+            return (Object.values(
+              arrayToObject(allConversations, 'id'),
+            ) as ConversationT[])?.sort((a, b) => {
+              if (a?.updated_at && b.updated_at) {
+                return b?.updated_at - a?.updated_at
+              }
+              return 1
+            }) //prevents duplicates
           })
 
           setPageDetails(response?.data?.pages)
@@ -110,12 +128,42 @@ function MessageList() {
   }
 
   const addNewConversation = () => {
-    updateChatbotDetails({ route: 'new-message' })
+    let payload: ChatBotStateT = {
+      ...chatbot,
+      route: 'new-message',
+      newConversationState: { ...chatbot?.newConversationState },
+    }
+
+    if (!payload?.newConversationState?.defaultMessage) {
+      payload['newConversationState']['defaultMessage'] = {
+        conversation_parts: [
+          {
+            blocks: chatbot?.composerSuggestions?.parts?.flat() || [
+              {
+                type: 'paragraph',
+                text: LANG.CHATBOT.DEFAULT_QUESTION,
+              },
+            ],
+            author: chatbot?.composerSuggestions?.operator || {
+              name: 'Fin',
+              is_bot: true,
+            },
+          },
+        ],
+      }
+    }
+    updateChatbotDetails(payload)
   }
 
   const interComurl = useMemo(() => {
     return `https://www.intercom.com/intercom-link?user_id=${chatbot?.userDetails?.id}&powered_by_app_id=uudolkfi&company=Dev&solution=live-chat`
   }, [chatbot?.userDetails])
+
+  const onRouteToChatview = useCallback((conversation: ConversationT) => {
+    updateChatbotDetails({ chatView: conversation, route: 'chat-view' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
     <Fragment>
       <Header>
@@ -144,6 +192,7 @@ function MessageList() {
               <ListItem
                 conversation={eachConversation}
                 key={eachConversation?.id}
+                onRouteToChatview={onRouteToChatview}
               />
             )
           })
