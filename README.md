@@ -1,5 +1,10 @@
 # petavue-chatbot
 
+##CHAT-FLOW
+
+[click here to see the basic flow of the chatbot](https://coggle.it/diagram/ZUnNmicP9MedGIe_/t/on-page-mount/a6e8cf39986c30ea47452f197dbe9d48a446417d5dcb8ee64cc2750d627fe0ed)
+
+
 ## Getting Started
 
 - Next Js
