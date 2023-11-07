@@ -16,6 +16,7 @@ function NewConversation() {
   const { chatbot } = useChatbot()
   const {
     newConversationState,
+    callNewMessage,
     handleNewConversationState,
   } = useNewConversation()
 
@@ -50,6 +51,7 @@ function NewConversation() {
         disabled={newConversationState.loading}
         onEnter={(block) => {
           handleNewConversationState({ loading: true, block })
+          callNewMessage({ block })
         }}
       />
     </Fragment>

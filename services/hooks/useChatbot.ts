@@ -1,7 +1,12 @@
 import { apiEndpoints } from '@/constants'
 import { backendPost } from '@/integration'
 import { useGlobalData } from '@/redux/selectors'
-import { ChatBotStateT, ChatViewStateT, updateChatbotData, updateChatviewState } from '@/redux/slices'
+import {
+  ChatBotStateT,
+  ChatViewStateT,
+  updateChatbotData,
+  updateChatviewState,
+} from '@/redux/slices'
 import { generateBaseUrl } from '@/utils'
 import { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
@@ -22,10 +27,9 @@ export const useChatbot = () => {
     updateChatbotDetails({ route: 'messages' })
   }
 
-  const onUpdateChatviewState=(payload:Partial<ChatViewStateT>)=>{
-  dispatch(updateChatviewState(payload))
-}
-
+  const onUpdateChatviewState = (payload: Partial<ChatViewStateT>) => {
+    dispatch(updateChatviewState(payload))
+  }
 
   const callChabotOpenApi = async () => {
     try {
@@ -135,6 +139,12 @@ type NewConversationStateT = {
   loading: boolean
   block: BlockT | null
 }
+
+export type CallNewMessagePayloadT = {
+  url?: string
+  block: BlockT
+  callBack?: Function
+}
 export const useNewConversation = () => {
   const { getCommonPayload, updateChatbotDetails } = useChatbot()
   const [state, setState] = useState<NewConversationStateT>({
@@ -142,21 +152,16 @@ export const useNewConversation = () => {
     block: null,
   })
 
-  useEffect(() => {
-    if (state?.block) {
-      callMessage()
-    }
-  }, [state?.block])
-
-  async function callMessage(url?: string) {
+  async function callNewMessage(payload: CallNewMessagePayloadT) {
     try {
       if (state?.block?.type === 'attachmentList') {
+        //handle AttachmentList apis
       } else {
         const response = await backendPost(
-          url || apiEndpoints.NEW_CONVERSATION,
+          payload?.url || apiEndpoints.NEW_CONVERSATION,
           {
             ...getCommonPayload(),
-            blocks: JSON.stringify([state?.block]),
+            blocks: JSON.stringify([payload?.block || state?.block]),
           },
         )
         if (response?.data?.id) {
@@ -168,6 +173,9 @@ export const useNewConversation = () => {
             },
             route: 'chat-view',
           })
+          if (payload?.callBack) {
+            await payload?.callBack()
+          }
         } else {
           //handle error
         }
@@ -188,5 +196,6 @@ export const useNewConversation = () => {
   return {
     newConversationState: state,
     handleNewConversationState,
+    callNewMessage,
   }
 }
