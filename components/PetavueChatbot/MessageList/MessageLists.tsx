@@ -79,13 +79,8 @@ function MessageList() {
           pageDetails?.next || apiEndpoints.CONVERSATIONS,
           getCommonPayload(),
         )
-        if (response?.data?.conversations?.length) {
-          if (!chatbot?.conversations?.length) {
-            updateChatbotDetails({
-              conversations: [...(response?.data?.conversations || [])],
-            })
-          }
 
+        if (response?.data?.conversations?.length) {
           setConverstions((prev) => {
             const allConversations = [
               ...prev,

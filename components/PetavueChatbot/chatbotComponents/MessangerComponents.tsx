@@ -215,7 +215,7 @@ export const MesaggeRenderer = (props: MesaggeRendererPropsT) => {
   return (
     <div className="flex flex-col gap-5" ref={elementRef}>
       {message?.conversation_message ? (
-        <div className={` flex gap-3 w-full items-end   flex-wrap `}>
+        <div className={` flex gap-3 w-full items-end  `}>
           <ChatbotSvg className="mb-2 h-8 w-8" />
 
           <BlocksRenderer
