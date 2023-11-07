@@ -14,57 +14,75 @@ import { LANG, apiEndpoints } from '@/constants'
 import { backendPost } from '@/integration'
 
 function Chatview() {
-  const { chatbot, getCommonPayload, onBackToMessages } = useChatbot()
+  const { chatbot, getCommonPayload, onUpdateChatviewState } = useChatbot()
   const {
     newConversationState,
     handleNewConversationState,
   } = useNewConversation()
+  const [changeWatcher, setChangeWatcher] = useState(0)
 
-  const [state, setState] = useState<{
-    loading: boolean
-    conversation?: ConversationT
-  }>({
-    loading: true,
-    conversation: chatbot?.chatView,
-  })
   useEffect(() => {
     callConversations()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatbot?.chatView])
+  }, [changeWatcher, chatbot?.chatView?.conversation?.id])
 
+  function recordChanges() {
+    setChangeWatcher((prev) => prev + 1)
+  }
   async function callConversations() {
     try {
       const response = await backendPost(
-        `${apiEndpoints.CONVERSATIONS}/${chatbot?.chatView?.id}`,
+        `${apiEndpoints.CONVERSATIONS}/${chatbot?.chatView?.conversation?.id}`,
         getCommonPayload(),
       )
       if (response?.data?.id) {
-        setState({ conversation: response?.data, loading: false })
+        onUpdateChatviewState({ conversation: response?.data, loading: false })
+        if (!response?.data?.read) {
+          callConversationsRead() //TO UPDATE AS READ
+        }
       } else {
-        setState({ loading: false })
+        onUpdateChatviewState({ loading: false })
       }
     } catch (e) {
       console.log(e)
-      setState({ loading: false })
+      onUpdateChatviewState({ loading: false })
     }
   }
+
+  async function callConversationsRead() {
+    try {
+      const response = await backendPost(
+        `${apiEndpoints.CONVERSATIONS}/${chatbot?.chatView?.conversation?.id}/read`,
+        getCommonPayload(),
+      )
+      if (response?.data?.id) {
+        onUpdateChatviewState({ conversation: response?.data, loading: false })
+      } else {
+        onUpdateChatviewState({ loading: false })
+      }
+    } catch (e) {
+      console.log(e)
+      onUpdateChatviewState({ loading: false })
+    }
+  }
+
   return (
     <Fragment>
       <ChatHeader allowToggle />
       <section
         className={`flex-1  flex flex-col gap-4 overflow-auto p-4 ${
-          state?.loading ? 'justify-center items-center' : ''
+          chatbot?.chatView?.loading ? 'justify-center items-center' : ''
         }`}
       >
         {' '}
-        {state?.loading ? (
+        {chatbot?.chatView?.loading ? (
           <CircularLoader />
         ) : (
           <Fragment>
             {' '}
             <MesaggeRenderer
               message={{
-                ...state?.conversation,
+                ...chatbot?.chatView?.conversation,
               }}
             />
             {newConversationState?.block ? (

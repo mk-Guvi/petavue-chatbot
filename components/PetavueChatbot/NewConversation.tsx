@@ -11,10 +11,9 @@ import {
   IntercomLabel,
   MesaggeRenderer,
 } from './chatbotComponents'
-import { BlockT } from './Chatbot.types'
 
 function NewConversation() {
-  const { chatbot, onBackToMessages, toggleChat } = useChatbot()
+  const { chatbot } = useChatbot()
   const {
     newConversationState,
     handleNewConversationState,

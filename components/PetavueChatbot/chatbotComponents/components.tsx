@@ -11,7 +11,7 @@ import { useChatbot } from '@/services/hooks'
 import { LANG } from '@/constants'
 import { LargeText, SmallText } from '../..'
 import { ChatbotSvg, GifSvg, MessageSvg } from '../ChatbotSvg'
-import { BlockT, ConversationT } from '../Chatbot.types'
+import { AttributesT, BlockT, ConversationT, FormT } from '../Chatbot.types'
 import Link from 'next/link'
 import tw from 'tailwind-styled-components'
 import Image from 'next/image'
@@ -55,27 +55,138 @@ export const ChatBotIcon = () => {
 
 type BlocksRendererPropsT = {
   blocks: BlockT[]
+  isBot: boolean
 }
 const BlocksRenderer = (props: BlocksRendererPropsT) => {
-  const { blocks } = props
+  const { blocks, isBot } = props
   return blocks?.map((eachBlock, blockIndex) => {
-    return eachBlock?.type === 'html' ? (
+    return (
       <div
         key={blockIndex}
-        dangerouslySetInnerHTML={{ __html: eachBlock?.content || '' }}
-      />
-    ) : eachBlock?.type === 'image' ? (
-      <Image
-        src={eachBlock?.url || ''}
-        height={200}
-        width={200}
-        alt="img"
-        key={blockIndex}
-      />
-    ) : (
-      <SmallText key={blockIndex}>{eachBlock?.text}</SmallText>
+        className={`p-4  ${
+          isBot
+            ? 'bg-gray-100 mr-auto'
+            : `${
+                eachBlock?.type !== 'image' ? 'bg-blue-500' : ''
+              } ml-auto text-white`
+        } rounded-lg h-fit max-w-[80%] `}
+      >
+        {eachBlock?.type === 'html' ? (
+          <div
+            key={blockIndex}
+            dangerouslySetInnerHTML={{ __html: eachBlock?.content || '' }}
+          />
+        ) : eachBlock?.type === 'image' ? (
+          <Image
+            src={eachBlock?.url || ''}
+            height={200}
+            width={200}
+            alt="img"
+            key={blockIndex}
+          />
+        ) : (
+          <SmallText key={blockIndex}>{eachBlock?.text}</SmallText>
+        )}
+      </div>
     )
   })
+}
+
+type AttributeCollectorPropsT = {
+  form: FormT
+}
+const getLabelAndPlaceholder = (attribute: AttributesT, form?: FormT) => {
+  if (
+    form?.type === 'notification_channel' &&
+    attribute?.identifier === 'email'
+  ) {
+    return {
+      label: 'Get notified by email',
+      placeholder: 'email@example.com',
+    }
+  } else {
+    return {
+      label: attribute?.name,
+      placeholder: `Enter ${attribute?.name}`,
+    }
+  }
+}
+
+const AttributeCollector = (props: AttributeCollectorPropsT) => {
+  const { form } = props
+  const [state, setState] = useState<FormT>(form)
+  useEffect(() => {
+    if (form)
+      setState({
+        ...form,
+        attributes: form?.attributes?.map((e) => {
+          const { label, placeholder } = getLabelAndPlaceholder(e, form)
+          return {
+            ...e,
+            name: label,
+            placeholder,
+          }
+        }),
+      })
+  }, [form])
+  const updateValue = (index: number, value: string) => {
+    setState((prev: FormT) => {
+      let tempAttributes = [...(prev?.attributes || [])]
+      tempAttributes[index]['value'] = value
+      return {
+        ...prev,
+        attributes: tempAttributes,
+      }
+    })
+  }
+  return (
+    <div
+      className={`p-4
+  bg-white
+  flex flex-col gap-2
+  drop-shadow-lg               
+ rounded-lg  mr-auto border-t border-blue-500 flex-1 max-w-[80%] `}
+    >
+      {state?.attributes?.map((eachAttribute, i) => {
+        return (
+          <Fragment key={eachAttribute?.name}>
+            <label htmlFor={eachAttribute?.identifier}>
+              <LargeText>{eachAttribute?.name}</LargeText>
+            </label>
+            <div
+              className={`inline-flex   items-center w-full ${
+                form?.attribute_collector_locked
+                  ? 'cursor-not-allowed border-2 rounded-md '
+                  : ''
+              }`}
+            >
+              <input
+                value={eachAttribute?.value || ''}
+                disabled={form?.attribute_collector_locked}
+                id={eachAttribute?.identifier}
+                placeholder={eachAttribute?.placeholder}
+                onChange={(e) => {
+                  updateValue(i, e.target.value)
+                }}
+                className={`h-[2.8rem] flex-1 px-2 outline-none ring-0 ${
+                  form?.attribute_collector_locked
+                    ? 'cursor-not-allowed'
+                    : 'border-l-2  rounded-l-md  border-t-2 border-b-2'
+                }`}
+              />
+              {form?.attribute_collector_locked ? (
+                <Icon icon="check" className="text-green-900 mr-2" />
+              ) : (
+                <div className="bg-blue-500 h-[2.8rem] cursor-pointer inline-flex justify-center border-blue-500 border-2 items-center w-10 rounded-r text-white">
+                  <Icon icon="chevron-right" />
+                </div>
+              )}
+            </div>
+          </Fragment>
+        )
+      })}
+    </div>
+  )
 }
 type MesaggeRendererPropsT = {
   message: ConversationT
@@ -88,13 +199,11 @@ export const MesaggeRenderer = (props: MesaggeRendererPropsT) => {
       {message?.conversation_message ? (
         <div className={` flex gap-3 w-full items-end   `}>
           <ChatbotSvg className="mb-2 h-8 w-8" />
-          <div
-            className={`p-4   bg-gray-100  rounded-lg h-fit max-w-[80%] mr-auto `}
-          >
-            <BlocksRenderer
-              blocks={message?.conversation_message?.blocks || []}
-            />
-          </div>
+
+          <BlocksRenderer
+            blocks={message?.conversation_message?.blocks || []}
+            isBot
+          />
         </div>
       ) : null}
       {message?.conversation_parts?.map((eachMessage, i) => {
@@ -113,22 +222,12 @@ export const MesaggeRenderer = (props: MesaggeRendererPropsT) => {
               <ChatbotSvg className="mb-2 h-8 w-8 " />
             ) : null}
             {eachMessage?.part_type === 'attribute_collector' ? (
-              <div
-                className={`p-4
-                bg-white
-                drop-shadow-lg               
-               rounded-lg h-40 mr-auto border-t border-blue-500 flex-1 max-w-[80%] `}
-              ></div>
+              <AttributeCollector form={eachMessage?.form || {}} />
             ) : (
-              <div
-                className={`p-4  ${
-                  !eachMessage?.author?.is_self
-                    ? 'bg-gray-100 mr-auto'
-                    : 'bg-blue-500 ml-auto text-white'
-                } rounded-lg h-fit max-w-[80%] `}
-              >
-                <BlocksRenderer blocks={eachMessage?.blocks} />
-              </div>
+              <BlocksRenderer
+                blocks={eachMessage?.blocks}
+                isBot={!eachMessage?.author?.is_self}
+              />
             )}
           </div>
         )
@@ -153,7 +252,7 @@ export const IntercomLabel = () => {
   )
 }
 
-const IntercomLabelContainer = tw.div`flex mx-auto items-center gap-2 p-1.5 text-gray-600 rounded-2xl px-3 hover:bg-gray-100 transition-all duration-200 cursor-pointer w-fit`
+const IntercomLabelContainer = tw.div`flex mb-2 mx-auto items-center gap-2 p-1.5 text-gray-600 rounded-2xl px-3 hover:bg-gray-100 transition-all duration-200 cursor-pointer w-fit`
 
 type ChatHeaderPropsT = {
   isDetailedView?: boolean
@@ -174,7 +273,7 @@ export const CoversationHeader = ({ chatbot }: { chatbot: ChatBotStateT }) => {
           {chatbot?.composerSuggestions?.operator?.first_name || 'Fin'}
         </MediumText>
         <MediumText className="inline-flex items-center gap-1">
-          <span className="bg-gray-500 px-1 py-0 text-[0.6rem] text-white rounded-md">
+          <span className="bg-gray-500 px-1.5 py-0 text-[0.7rem] text-white rounded-md">
             AI
           </span>
           {'Bot'}

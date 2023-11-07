@@ -18,8 +18,9 @@ import ListItem from './ListItem'
 import { arrayToObject } from '@/utils'
 import tw from 'tailwind-styled-components'
 import Link from 'next/link'
-import { ChatBotStateT, updateNewConversationData } from '@/redux/slices'
 import { ConversationT } from '../Chatbot.types'
+import { ChatBotStateT } from '@/redux/slices'
+import { useIntersectionObserver } from '@uidotdev/usehooks'
 
 type PageDetailsT = {
   type?: 'pages'
@@ -36,8 +37,12 @@ function MessageList() {
     getCommonPayload,
   } = useChatbot()
   const [loading, setLoading] = useState(false)
+  const [targetDivRef, entry] = useIntersectionObserver({
+    threshold: 0,
+    root: null,
+    rootMargin: '0px',
+  })
 
-  const targetDivRef = useRef<HTMLDivElement | null>(null)
   const [conversations, setConverstions] = useState(chatbot?.conversations)
   const [pageDetails, setPageDetails] = useState<PageDetailsT>({})
   const [error, setError] = useState('')
@@ -45,9 +50,8 @@ function MessageList() {
   const [changeListner, setChangeListner] = useState(0)
 
   useEffect(() => {
-    if (changeListner) {
-      getConversations()
-    }
+    getConversations()
+
     if (!chatbot?.conversations?.length) {
       setLoading(true)
     }
@@ -55,31 +59,12 @@ function MessageList() {
   }, [changeListner])
 
   useEffect(() => {
-    const options: IntersectionObserverInit = {
-      root: null, // The viewport is the root
-      rootMargin: '0px',
-      threshold: 0.5, // Trigger when 50% of the target is visible
+    if (entry?.isIntersecting && !loading) {
+      setChangeListner((prev) => prev + 1)
     }
 
-    const handleIntersection: IntersectionObserverCallback = (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting && !loading) {
-          setChangeListner((prev) => prev + 1)
-        }
-      })
-    }
-
-    const observer = new IntersectionObserver(handleIntersection, options)
-
-    if (targetDivRef.current) {
-      observer.observe(targetDivRef.current)
-    }
-
-    return () => {
-      observer.disconnect()
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetDivRef])
+  }, [entry, loading])
 
   /**
    * The function `getConversations` is an asynchronous function that retrieves conversations from a
@@ -87,7 +72,7 @@ function MessageList() {
    */
   const getConversations = async () => {
     try {
-      if (chatbot?.conversations?.length && !pageDetails?.next) {
+      if (chatbot?.conversations?.length && pageDetails?.next === null) {
         setHasMore(false)
       } else {
         const response = await backendPost(
@@ -160,7 +145,10 @@ function MessageList() {
   }, [chatbot?.userDetails])
 
   const onRouteToChatview = useCallback((conversation: ConversationT) => {
-    updateChatbotDetails({ chatView: conversation, route: 'chat-view' })
+    updateChatbotDetails({
+      chatView: { conversation, loading: true, hideInputfield: true },
+      route: 'chat-view',
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -178,7 +166,7 @@ function MessageList() {
       </Header>
 
       <section
-        className={`flex-1 overflow-auto flex flex-col ${
+        className={`flex-1 overflow-auto relative flex flex-col ${
           loading || error ? 'justify-center items-center' : ''
         }`}
       >
@@ -199,7 +187,7 @@ function MessageList() {
         ) : (
           <NoMessagesPlaceholder />
         )}
-        {hasMore ? <div ref={targetDivRef} /> : null}
+        {hasMore ? <div ref={targetDivRef} className="  p-4  w-full " /> : null}
       </section>
 
       <AddQuestionContainer onClick={addNewConversation}>

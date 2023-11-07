@@ -21,6 +21,11 @@ type NewConversationStateT={
   defaultMessage?:ConversationT
   
 }
+export type ChatViewStateT={
+  loading: boolean
+  conversation?: ConversationT
+  hideInputfield: boolean
+}
 // Define the type for your initial state
 export type ChatBotStateT={
   open:boolean
@@ -31,14 +36,14 @@ export type ChatBotStateT={
   composerSuggestions?:ComposerSuggestionT
   newConversation?:NewConversationT,
   newConversationState:NewConversationStateT,
-  chatView?:ConversationT
+  chatView:ChatViewStateT
 }
 export type GlobalSliceStateT = {
   chatbot:ChatBotStateT
 };
 type GlobalSliceT = Slice<GlobalSliceStateT, {
   updateChatbotData: (state: GlobalSliceStateT,action:PayloadAction<Partial<ChatBotStateT>>) => void;
-  updateNewConversationData: (state: GlobalSliceStateT,action:PayloadAction<Partial<NewConversationStateT>>) => void;
+  updateChatviewState: (state: GlobalSliceStateT,action:PayloadAction<Partial<ChatViewStateT>>) => void;
 }, "global">;
 
 const initialState: GlobalSliceStateT = {
@@ -48,7 +53,11 @@ const initialState: GlobalSliceStateT = {
     newConversationState:{
       
     },
-
+    chatView:{
+      loading:true,
+      conversation:{},
+      hideInputfield:true
+    },
     showChatbot:false,
     route:"messages",
     userDetails:{}
@@ -63,8 +72,9 @@ const globalSlice: GlobalSliceT = createSlice({
     updateChatbotData: (state, action) => {
       state.chatbot = {...state.chatbot,...action.payload}
     },
-    updateNewConversationData(state, action) {
-     state.chatbot.newConversationState={...state.chatbot.newConversationState,...action.payload} 
+  
+    updateChatviewState(state, action) {
+      state.chatbot.chatView={...state.chatbot.chatView,...action.payload}  
     }
     
   },
@@ -75,6 +85,6 @@ const globalSlice: GlobalSliceT = createSlice({
   },
 });
 
-export const {updateChatbotData,updateNewConversationData} = globalSlice.actions;
+export const {updateChatbotData,updateChatviewState} = globalSlice.actions;
 
 export default globalSlice.reducer;

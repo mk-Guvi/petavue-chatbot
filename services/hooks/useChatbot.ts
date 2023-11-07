@@ -1,7 +1,7 @@
 import { apiEndpoints } from '@/constants'
 import { backendPost } from '@/integration'
 import { useGlobalData } from '@/redux/selectors'
-import { ChatBotStateT, updateChatbotData } from '@/redux/slices'
+import { ChatBotStateT, ChatViewStateT, updateChatbotData, updateChatviewState } from '@/redux/slices'
 import { generateBaseUrl } from '@/utils'
 import { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
@@ -21,6 +21,11 @@ export const useChatbot = () => {
   const onBackToMessages = () => {
     updateChatbotDetails({ route: 'messages' })
   }
+
+  const onUpdateChatviewState=(payload:Partial<ChatViewStateT>)=>{
+  dispatch(updateChatviewState(payload))
+}
+
 
   const callChabotOpenApi = async () => {
     try {
@@ -49,7 +54,9 @@ export const useChatbot = () => {
       s: 'd80da787-c5dd-43a7-846f-7b414cdbcae3',
       'Idempotency-Key': '2d1347f813d62817',
       referer: generateBaseUrl(),
-      user_data:JSON.stringify({"anonymous_id":"b48b2ba0-54da-4d51-b256-95d19f73c3ff"})
+      user_data: JSON.stringify({
+        anonymous_id: 'b48b2ba0-54da-4d51-b256-95d19f73c3ff',
+      }),
     }
 
     // REVERT ONCE ADD MESSAGE API SUCCESS
@@ -83,7 +90,6 @@ export const useChatbot = () => {
         apiEndpoints.CONVERSATIONS,
         getCommonPayload(),
       )
-
       updateChatbotDetails({
         conversations: [...(response?.data?.conversations || [])],
       })
@@ -96,6 +102,7 @@ export const useChatbot = () => {
     chatbot,
     updateChatbotDetails,
     getCommonPayload,
+    onUpdateChatviewState,
     toggleChat,
     onBackToMessages,
     updateConversations,
@@ -107,7 +114,6 @@ export const useChatbotPingService = () => {
   useEffect(() => {
     ;(async () => {
       try {
-
         const result = await backendPost(apiEndpoints.PING, getCommonPayload())
         if (result?.data?.user?.id) {
           updateChatbotDetails({
@@ -123,7 +129,6 @@ export const useChatbotPingService = () => {
       }
     })()
   }, [])
-
 }
 
 type NewConversationStateT = {
@@ -152,12 +157,15 @@ export const useNewConversation = () => {
           {
             ...getCommonPayload(),
             blocks: JSON.stringify([state?.block]),
-            created_at:dayjs().format()
           },
         )
         if (response?.data?.id) {
           updateChatbotDetails({
-            chatView: response?.data,
+            chatView: {
+              conversation: response?.data,
+              loading: false,
+              hideInputfield: false,
+            },
             route: 'chat-view',
           })
         } else {
