@@ -1,10 +1,8 @@
-import React, { Fragment, useState } from 'react'
+import React, { Fragment } from 'react'
 import tw from 'tailwind-styled-components'
-import { H4, H5, Icon, LargeText, MediumText, SmallText } from '..'
+import { Icon } from '..'
 import { useChatbot, useNewConversation } from '@/services/hooks'
-import { ChatbotSvg } from './ChatbotSvg'
-import Image from 'next/image'
-import { LANG } from '@/constants'
+
 import {
   ChatHeader,
   ChatbotInputfield,

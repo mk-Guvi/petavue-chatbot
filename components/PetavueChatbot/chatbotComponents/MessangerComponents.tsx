@@ -3,7 +3,13 @@ import { CircularLoader, H5, Icon, MediumText } from '../..'
 
 import { LargeText, SmallText } from '../..'
 import { ChatbotSvg, GifSvg, MessageSvg } from '../ChatbotSvg'
-import { AttributesT, BlockT, ConversationT, FormT } from '../Chatbot.types'
+import {
+  AttributesT,
+  BlockT,
+  ConversationT,
+  FormT,
+  ReplyOptionT,
+} from '../Chatbot.types'
 
 import Image from 'next/image'
 import { isValidEmail } from '@/utils'
@@ -26,43 +32,48 @@ const getLabelAndPlaceholder = (attribute: AttributesT, form?: FormT) => {
     }
   }
 }
+
+const BlockItemRenderer = (props: {
+  block?: BlockT
+  isBot?: boolean
+  className?: string
+}) => {
+  const { block, isBot, className = '' } = props
+  return (
+    <div
+      className={`p-4  ${className} ${
+        isBot
+          ? 'bg-gray-100 mr-auto'
+          : `${block?.type !== 'image' ? 'bg-blue-500' : ''} ml-auto text-white`
+      } rounded-lg h-fit max-w-[80%] `}
+    >
+      {block?.type === 'image' ? (
+        <Image src={block?.url || ''} height={200} width={200} alt="img" />
+      ) : (
+        <SmallText
+          dangerouslySetInnerHTML={{
+            __html: block?.text || block?.content || '',
+          }}
+        ></SmallText>
+      )}
+    </div>
+  )
+}
 type BlocksRendererPropsT = {
   blocks: BlockT[]
   isBot: boolean
 }
 const BlocksRenderer = (props: BlocksRendererPropsT) => {
   const { blocks, isBot } = props
-  return blocks?.map((eachBlock, blockIndex) => {
-    return (
-      <div
-        key={blockIndex}
-        className={`p-4  ${
-          isBot
-            ? 'bg-gray-100 mr-auto'
-            : `${
-                eachBlock?.type !== 'image' ? 'bg-blue-500' : ''
-              } ml-auto text-white`
-        } rounded-lg h-fit max-w-[80%] `}
-      >
-        {eachBlock?.type === 'html' ? (
-          <div
-            key={blockIndex}
-            dangerouslySetInnerHTML={{ __html: eachBlock?.content || '' }}
-          />
-        ) : eachBlock?.type === 'image' ? (
-          <Image
-            src={eachBlock?.url || ''}
-            height={200}
-            width={200}
-            alt="img"
-            key={blockIndex}
-          />
-        ) : (
-          <SmallText key={blockIndex}>{eachBlock?.text}</SmallText>
-        )}
-      </div>
-    )
-  })
+  return (
+    <div className="flex flex-col w-full gap-2">
+      {blocks?.map((eachBlock, blockIndex) => {
+        return (
+          <BlockItemRenderer block={eachBlock} key={blockIndex} isBot={isBot} />
+        )
+      })}
+    </div>
+  )
 }
 
 type AttributeCollectorPropsT = {
@@ -114,6 +125,9 @@ const AttributeCollector = (props: AttributeCollectorPropsT) => {
       }
     })
     setError(errorObj)
+    if (!hasError) {
+      //Call the Submit
+    }
   }
   return (
     <div
@@ -172,6 +186,18 @@ const AttributeCollector = (props: AttributeCollectorPropsT) => {
     </div>
   )
 }
+
+const ReplyOptionRenderer = (props: { options: ReplyOptionT[] }) => {
+  return props?.options?.map((e) => {
+    return (
+      <BlockItemRenderer
+        block={e}
+        key={e?.uuid}
+        className="hover:bg-blue-400 cursor-pointer"
+      />
+    )
+  })
+}
 type MesaggeRendererPropsT = {
   message: ConversationT
   loading?: boolean
@@ -189,7 +215,7 @@ export const MesaggeRenderer = (props: MesaggeRendererPropsT) => {
   return (
     <div className="flex flex-col gap-5" ref={elementRef}>
       {message?.conversation_message ? (
-        <div className={` flex gap-3 w-full items-end   `}>
+        <div className={` flex gap-3 w-full items-end   flex-wrap `}>
           <ChatbotSvg className="mb-2 h-8 w-8" />
 
           <BlocksRenderer
@@ -210,10 +236,17 @@ export const MesaggeRenderer = (props: MesaggeRendererPropsT) => {
                 : 'justify-start'
             }`}
           >
-            {!eachMessage?.author?.is_self ? (
+            {!eachMessage?.author?.is_self &&
+            eachMessage?.part_type !== 'quick_reply' ? (
               <ChatbotSvg className="mb-2 h-8 w-8 " />
             ) : null}
-            {eachMessage?.part_type === 'attribute_collector' ? (
+            {eachMessage?.part_type === 'quick_reply' ? (
+              message?.conversation_parts?.[i] ? null : (
+                <ReplyOptionRenderer
+                  options={eachMessage?.reply_options || []}
+                />
+              )
+            ) : eachMessage?.part_type === 'attribute_collector' ? (
               <AttributeCollector form={eachMessage?.form || {}} />
             ) : (
               <BlocksRenderer

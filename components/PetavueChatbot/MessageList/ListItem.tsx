@@ -12,6 +12,7 @@ type ListItemPropT = {
 }
 
 const htmlRegex = /<[^>]+>/g
+
 function ListItem({ conversation, onRouteToChatview }: ListItemPropT) {
   const { value } = useMemo(() => {
     return getValue()
@@ -47,10 +48,11 @@ function ListItem({ conversation, onRouteToChatview }: ListItemPropT) {
     switch (block?.type) {
       case 'attachmentList':
         return block?.attachments?.[0]?.name || ''
-      case 'html':
-        return block?.content?.replace(htmlRegex, '') || ''
       default:
-        return block?.text || 'Invalid message'
+        return (
+          (block?.text || block?.content)?.replace(htmlRegex, '') ||
+          'Invalid message'
+        )
     }
   }
 

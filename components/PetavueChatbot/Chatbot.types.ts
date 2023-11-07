@@ -38,10 +38,9 @@ export type PartTypeT =
   | 'fin_answer'
 export type ReadTypeT = 'text'
 export type MoodT = null | 'clarifying' | 'negative'
-export type ReplyOptionT = {
+export type ReplyOptionT = BlockT&{
   uuid: string
-  text?: string
-  type: PartTypeT
+
 }
 
 export type AuthorT = {
