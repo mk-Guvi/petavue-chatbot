@@ -52,9 +52,6 @@ function MessageList() {
   useEffect(() => {
     getConversations()
 
-    if (!chatbot?.conversations?.length) {
-      setLoading(true)
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [changeListner])
 
@@ -72,6 +69,9 @@ function MessageList() {
    */
   const getConversations = async () => {
     try {
+      if (!chatbot?.conversations?.length) {
+        setLoading(true)
+      }
       if (chatbot?.conversations?.length && pageDetails?.next === null) {
         setHasMore(false)
       } else {
@@ -80,18 +80,18 @@ function MessageList() {
           getCommonPayload(),
         )
         if (response?.data?.conversations?.length) {
-          if (!chatbot?.conversations?.length) {
-            updateChatbotDetails({
-              conversations: [...(response?.data?.conversations || [])],
-            })
-          }
+          // if (!chatbot?.conversations?.length) {
+          //   updateChatbotDetails({
+          //     conversations: [...(response?.data?.conversations || [])],
+          //   })
+          // }
 
           setConverstions((prev) => {
             const allConversations = [
               ...prev,
               ...(response?.data?.conversations || []),
             ]
-            return (Object.values(
+            const data = (Object.values(
               arrayToObject(allConversations, 'id'),
             ) as ConversationT[])?.sort((a, b) => {
               if (a?.updated_at && b.updated_at) {
@@ -99,6 +99,13 @@ function MessageList() {
               }
               return 1
             }) //prevents duplicates
+            updateChatbotDetails({
+              conversations: data?.slice(
+                0,
+                response?.data?.pages?.per_page || 20,
+              ),
+            })
+            return data
           })
 
           setPageDetails(response?.data?.pages)
