@@ -25,6 +25,7 @@ export type ChatViewStateT={
   loading: boolean
   conversation?: ConversationT
   hideInputfield: boolean
+  isNewChannel:boolean
 }
 // Define the type for your initial state
 export type ChatBotStateT={
@@ -56,7 +57,8 @@ const initialState: GlobalSliceStateT = {
     chatView:{
       loading:true,
       conversation:{},
-      hideInputfield:true
+      hideInputfield:true,
+      isNewChannel:false
     },
     showChatbot:false,
     route:"messages",

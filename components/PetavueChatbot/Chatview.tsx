@@ -1,18 +1,33 @@
 import { useChatbot, useNewConversation } from '@/services/hooks'
-import React, { Fragment, useEffect, useRef, useState } from 'react'
+import React, {
+  Fragment,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import {
+  ChatBotReplyLoader,
   ChatHeader,
   ChatbotInputfield,
   IntercomLabel,
   MesaggeRenderer,
 } from './chatbotComponents'
-import { BlockT } from './Chatbot.types'
+import { BlockT, ReplyOptionT } from './Chatbot.types'
 import { CircularLoader } from '..'
 import { apiEndpoints } from '@/constants'
 import { backendPost } from '@/integration'
+import { updateChatviewState } from '@/redux/slices'
 
+export type OnQuickReplayPayloadT = {
+  id: string
+  replay_option: ReplyOptionT
+}
 function Chatview() {
   const { chatbot, getCommonPayload, onUpdateChatviewState } = useChatbot()
+  const [replayLoading, setReplayLoading] = useState(
+    chatbot?.chatView?.isNewChannel,
+  )
 
   const {
     newConversationState,
@@ -22,16 +37,28 @@ function Chatview() {
 
   useEffect(() => {
     callConversations()
-
+    if (chatbot?.chatView?.isNewChannel) {
+      callDelayedConversation()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatbot?.chatView?.conversation?.id])
 
+  const callDelayedConversation = () => {
+    setReplayLoading(true)
+    setTimeout(async () => {
+      await callConversations()
+      setReplayLoading(false)
+      updateChatviewState({ isNewChannel: false })
+      handleNewConversationState({ block: null })
+    }, 5000)
+  }
   async function callConversations() {
     try {
       const response = await backendPost(
         `${apiEndpoints.CONVERSATIONS}/${chatbot?.chatView?.conversation?.id}`,
         getCommonPayload(),
       )
+
       if (response?.data?.id) {
         onUpdateChatviewState({
           conversation: response?.data,
@@ -77,6 +104,15 @@ function Chatview() {
     }
   }
 
+  const onQuickReplay = useCallback((payload: OnQuickReplayPayloadT) => {
+    callNewMessage({
+      quickReplay: payload,
+      url: `${apiEndpoints.CONVERSATIONS}/${chatbot?.chatView?.conversation?.id}/quick_reply`,
+      callBack: callDelayedConversation,
+      ignoreConversationUpdate: true,
+    })
+  }, [])
+
   return (
     <Fragment>
       <ChatHeader allowToggle />
@@ -95,6 +131,7 @@ function Chatview() {
               message={{
                 ...chatbot?.chatView?.conversation,
               }}
+              onQuickReplay={onQuickReplay}
             />
             {newConversationState?.block ? (
               <MesaggeRenderer
@@ -113,6 +150,7 @@ function Chatview() {
             ) : null}
           </Fragment>
         )}
+        {replayLoading ? <ChatBotReplyLoader /> : null}
       </section>
       <IntercomLabel />
       {chatbot?.chatView?.hideInputfield ? null : (
@@ -122,10 +160,11 @@ function Chatview() {
             callNewMessage({
               block,
               url: `${apiEndpoints.CONVERSATIONS}/${chatbot?.chatView?.conversation?.id}/reply`,
-              callBack: callConversations,
+              callBack: callDelayedConversation,
+              ignoreConversationUpdate: true,
             })
           }}
-          disabled={newConversationState.loading}
+          disabled={newConversationState.loading || replayLoading}
         />
       )}
     </Fragment>

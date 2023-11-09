@@ -153,7 +153,12 @@ function MessageList() {
 
   const onRouteToChatview = useCallback((conversation: ConversationT) => {
     updateChatbotDetails({
-      chatView: { conversation, loading: true, hideInputfield: true },
+      chatView: {
+        conversation,
+        loading: true,
+        hideInputfield: true,
+        isNewChannel: false,
+      },
       route: 'chat-view',
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -216,4 +221,4 @@ function MessageList() {
 export default MessageList
 const Footer = tw.footer`p-2 cursor-pointer hover:bg-gray-200 items-center gap-2 bg-gray-100 sm:rounded-b-lg text-gray-600 flex justify-center`
 const Header = tw.header`bg-blue-800 sm:rounded-t-xl p-4 flex gap-2  items-center text-white`
-const AddQuestionContainer = tw.div`absolute z-20 bottom-16 px-3 rounded-lg text-white left-1/2 transform -translate-x-1/2 bg-blue-700 hover:bg-blue-500 cursor-pointer  inline-flex gap-2 p-2`
+const AddQuestionContainer = tw.div`absolute z-20 bottom-16 !px-6 rounded-lg text-white left-1/2 transform -translate-x-1/2 bg-blue-700 hover:bg-blue-500 cursor-pointer  inline-flex gap-2 py-2`

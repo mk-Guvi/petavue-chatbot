@@ -10,6 +10,7 @@ export type BlockT = {
   previewUrl?: string
   attribution?: string
   title?: string
+  uuid?:string
 }
 
 export type AttributesT = {

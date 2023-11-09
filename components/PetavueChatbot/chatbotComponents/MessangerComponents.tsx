@@ -13,6 +13,7 @@ import {
 
 import Image from 'next/image'
 import { isValidEmail } from '@/utils'
+import { OnQuickReplayPayloadT } from '../Chatview'
 
 const getLabelAndPlaceholder = (attribute: AttributesT, form?: FormT) => {
   if (
@@ -33,24 +34,45 @@ const getLabelAndPlaceholder = (attribute: AttributesT, form?: FormT) => {
   }
 }
 
-const BlockItemRenderer = (props: {
+type BlockItemRendererT = {
   block?: BlockT
   isBot?: boolean
-  className?: string
-}) => {
-  const { block, isBot, className = '' } = props
+  containerClassName?: string
+  childClassName?: string
+  isLoading?: boolean
+}
+const BlockItemRenderer = (props: BlockItemRendererT) => {
+  const {
+    block,
+    isBot,
+    containerClassName = '',
+    childClassName = '',
+    isLoading,
+  } = props
   return (
     <div
-      className={`p-4  ${className} ${
+      id={block?.uuid}
+      className={`p-4  ${containerClassName} ${isLoading ? 'w-28' : ''} ${
         isBot
           ? 'bg-gray-100 mr-auto'
           : `${block?.type !== 'image' ? 'bg-blue-500' : ''} ml-auto text-white`
       } rounded-lg h-fit max-w-[80%] `}
     >
-      {block?.type === 'image' ? (
-        <Image src={block?.url || ''} height={200} width={200} alt="img" />
+      {isLoading ? (
+        <CircularLoader className="mx-auto !h-4 !w-4" />
+      ) : block?.type === 'image' ? (
+        <Image
+          src={block?.url || ''}
+          height={200}
+          width={200}
+          id={block?.uuid}
+          alt="img"
+          className={`${childClassName}`}
+        />
       ) : (
         <SmallText
+          className={childClassName}
+          id={block?.uuid}
           dangerouslySetInnerHTML={{
             __html: block?.text || block?.content || '',
           }}
@@ -187,23 +209,48 @@ const AttributeCollector = (props: AttributeCollectorPropsT) => {
   )
 }
 
-const ReplyOptionRenderer = (props: { options: ReplyOptionT[] }) => {
-  return props?.options?.map((e) => {
-    return (
-      <BlockItemRenderer
-        block={e}
-        key={e?.uuid}
-        className="hover:bg-blue-400 cursor-pointer"
-      />
-    )
-  })
+const ReplyOptionRenderer = (props: {
+  onQuickReplay?: (payload: OnQuickReplayPayloadT) => void
+  options: ReplyOptionT[]
+  messageId: string
+}) => {
+  const [showOption, setShowOption] = useState('')
+  const onClickOption = (e: any) => {
+    const option = props?.options?.find((each) => each?.uuid === e.target.id)
+
+    if (option?.uuid && props?.onQuickReplay) {
+      props?.onQuickReplay({
+        id: props?.messageId,
+        replay_option: { ...option },
+      })
+      setShowOption(option?.uuid || '')
+    }
+  }
+  return (
+    <div
+      className="inline-flex justify-end items-center gap-2 w-full flex-wrap "
+      onClick={onClickOption}
+    >
+      {props?.options?.map((e) => {
+        return !showOption || showOption === e?.uuid ? (
+          <BlockItemRenderer
+            block={e}
+            key={e?.uuid}
+            containerClassName="hover:bg-blue-400 !ml-0 cursor-pointer"
+          />
+        ) : null
+      })}
+    </div>
+  )
 }
 type MesaggeRendererPropsT = {
   message: ConversationT
   loading?: boolean
+
+  onQuickReplay?: (payload: OnQuickReplayPayloadT) => void
 }
 export const MesaggeRenderer = (props: MesaggeRendererPropsT) => {
-  const { loading, message } = props
+  const { loading, message, onQuickReplay } = props
   const elementRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -225,7 +272,6 @@ export const MesaggeRenderer = (props: MesaggeRendererPropsT) => {
         </div>
       ) : null}
       {message?.conversation_parts?.map((eachMessage, i) => {
-        console.log({ eachMessage }, 'sdas')
         return (
           <div
             key={i}
@@ -241,11 +287,15 @@ export const MesaggeRenderer = (props: MesaggeRendererPropsT) => {
               <ChatbotSvg className="mb-2 h-8 w-8 " />
             ) : null}
             {eachMessage?.part_type === 'quick_reply' ? (
-              message?.conversation_parts?.[i] ? null : (
-                <ReplyOptionRenderer
-                  options={eachMessage?.reply_options || []}
-                />
-              )
+              <Fragment>
+                {message?.conversation_parts?.[i + 1] ? null : (
+                  <ReplyOptionRenderer
+                    messageId={eachMessage?.id || ''}
+                    options={eachMessage?.reply_options || []}
+                    onQuickReplay={onQuickReplay}
+                  />
+                )}
+              </Fragment>
             ) : eachMessage?.part_type === 'attribute_collector' ? (
               <AttributeCollector form={eachMessage?.form || {}} />
             ) : (
@@ -254,10 +304,29 @@ export const MesaggeRenderer = (props: MesaggeRendererPropsT) => {
                 isBot={!eachMessage?.author?.is_self}
               />
             )}
+            {loading ? (
+              <CircularLoader className="!h-2.5  !w-2.5 ml-auto" />
+            ) : null}
           </div>
         )
       })}
-      {loading ? <CircularLoader className="!h-2.5 !w-2.5 ml-auto" /> : null}
+    </div>
+  )
+}
+
+export const ChatBotReplyLoader = () => {
+  const elementRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (elementRef?.current) {
+      elementRef?.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [elementRef])
+
+  return (
+    <div className={` flex gap-5 !w-full items-end  `} ref={elementRef}>
+      <ChatbotSvg className="!h-7 !w-7 mb-2" />
+      <BlockItemRenderer isBot isLoading />
     </div>
   )
 }

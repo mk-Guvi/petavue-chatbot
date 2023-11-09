@@ -12,8 +12,9 @@ import { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { appService } from '../appService'
 import { BlockT } from '@/components/PetavueChatbot/Chatbot.types'
-import axios from 'axios'
+import { uuid } from 'uuidv4'
 import dayjs from 'dayjs'
+import { OnQuickReplayPayloadT } from '@/components/PetavueChatbot/Chatview'
 
 export const useChatbot = () => {
   const { chatbot } = useGlobalData()
@@ -44,6 +45,7 @@ export const useChatbot = () => {
       console.log(e)
     }
   }
+
   const toggleChat = () => {
     let open = !chatbot.open
     updateChatbotDetails({ open })
@@ -54,33 +56,35 @@ export const useChatbot = () => {
     let payload: Record<string, any> = {
       app_id: 'uudolkfi',
       v: 3,
-      g: '118279c3214aeaf35e93dba3e2224edfc9aabaa8',
-      s: 'd80da787-c5dd-43a7-846f-7b414cdbcae3',
-      'Idempotency-Key': '2d1347f813d62817',
+      g: "40c6c0be34130c2b978963c60fe3f6b0cbf89595",
+      s: "20f13c65-9a9a-4360-9735-a47dbd41ba9c",
+      r: "",
+      'Idempotency-Key': uuid(),
       referer: generateBaseUrl(),
-      user_data: JSON.stringify({
-        anonymous_id: 'b48b2ba0-54da-4d51-b256-95d19f73c3ff',
-      }),
+      client_assigned_uuid: uuid(),
+      // user_data: JSON.stringify({
+      //   anonymous_id: 'b48b2ba0-54da-4d51-b256-95d19f73c3ff',
+      // }),
     }
 
-    // REVERT ONCE ADD MESSAGE API SUCCESS
+   
 
-    // let anonymous_id = ''
-    // if (chatbot?.userDetails?.anonymous_id) {
-    //   anonymous_id = chatbot?.userDetails?.anonymous_id
-    // } else {
-    //   let userDetails = appService?.getUserDetails()
-    //   if (userDetails?.anonymous_id) {
-    //     updateChatbotDetails({ userDetails })
-    //     anonymous_id = userDetails?.anonymous_id
-    //   }
-    // }
+    let anonymous_id = ''
+    if (chatbot?.userDetails?.anonymous_id) {
+      anonymous_id = chatbot?.userDetails?.anonymous_id
+    } else {
+      let userDetails = appService?.getUserDetails()
+      if (userDetails?.anonymous_id) {
+        updateChatbotDetails({ userDetails })
+        anonymous_id = userDetails?.anonymous_id
+      }
+    }
 
-    // if (anonymous_id) {
-    //   payload['user_data'] = JSON.stringify({
-    //     anonymous_id,
-    //   })
-    // }
+    if (anonymous_id) {
+      payload['user_data'] = JSON.stringify({
+        anonymous_id,
+      })
+    }
     return payload
   }
 
@@ -142,46 +146,78 @@ type NewConversationStateT = {
 
 export type CallNewMessagePayloadT = {
   url?: string
-  block: BlockT
+  block?: BlockT
   callBack?: Function
+  ignoreConversationUpdate?: boolean
+  quickReplay?: OnQuickReplayPayloadT
 }
 export const useNewConversation = () => {
-  const { getCommonPayload, updateChatbotDetails } = useChatbot()
+  const { getCommonPayload, updateChatbotDetails, chatbot } = useChatbot()
   const [state, setState] = useState<NewConversationStateT>({
     loading: false,
     block: null,
   })
 
   async function callNewMessage(payload: CallNewMessagePayloadT) {
+    const {
+      ignoreConversationUpdate,
+      url,
+      block = state?.block,
+      callBack,
+      quickReplay,
+    } = payload
     try {
-      if (state?.block?.type === 'attachmentList') {
+      if (block?.type === 'attachmentList') {
         //handle AttachmentList apis
       } else {
+        let payload: Record<string, any> = {
+          ...getCommonPayload(),
+        }
+        if (!url) {
+          const currentDate = dayjs()
+          const formattedDate = currentDate.format(
+            'ddd MMM DD YYYY HH:mm:ss [GMT]ZZ (z)',
+          )
+          payload['created_at'] = formattedDate
+          
+        }
+        if (block) {
+          payload['blocks'] = JSON.stringify([block])    
+          payload["snapshot_id"]= 29496972
+        } else if (quickReplay) {
+          payload['conversation_part'] = JSON.stringify({...quickReplay,})
+          payload['is_intersection_booted']=null
+          payload["client_assigned_uuid"]=uuid()
+          payload["platform"]="web"
+          payload["internal"]=""
+          payload["user_active_company_id"]=-1
+        }
         const response = await backendPost(
-          payload?.url || apiEndpoints.NEW_CONVERSATION,
-          {
-            ...getCommonPayload(),
-            blocks: JSON.stringify([payload?.block || state?.block]),
-          },
+          url || apiEndpoints.NEW_CONVERSATION,
+          payload,
         )
+
         if (response?.data?.id) {
           updateChatbotDetails({
             chatView: {
-              conversation: response?.data,
+              conversation: ignoreConversationUpdate
+                ? chatbot?.chatView?.conversation
+                : response?.data,
               loading: false,
               hideInputfield: false,
+              isNewChannel: true,
             },
             route: 'chat-view',
           })
-          if (payload?.callBack) {
-            await payload?.callBack()
+          if (callBack) {
+            await callBack()
           }
         } else {
           //handle error
         }
       }
 
-      handleNewConversationState({ block: null, loading: false })
+      handleNewConversationState({ loading: false })
     } catch (e) {
       console.log(e)
       handleNewConversationState({ block: null, loading: false })
