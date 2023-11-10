@@ -13,7 +13,7 @@ import {
   IntercomLabel,
   MesaggeRenderer,
 } from './chatbotComponents'
-import { BlockT, ReplyOptionT } from './Chatbot.types'
+import { BlockT, ConversationT, ReplyOptionT } from './Chatbot.types'
 import { CircularLoader } from '..'
 import { apiEndpoints } from '@/constants'
 import { backendPost } from '@/integration'
@@ -48,8 +48,8 @@ function Chatview() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatbot?.chatView?.conversation?.id])
 
-  const callDelayedConversation = () => {
-    setReplayLoading(true)
+  const callDelayedConversation = (ignoreReplayLoading?: boolean) => {
+    setReplayLoading(!ignoreReplayLoading)
     setTimeout(async () => {
       await callConversations()
       setReplayLoading(false)
@@ -57,6 +57,17 @@ function Chatview() {
       handleNewConversationState({ block: null })
     }, 5000)
   }
+
+  const checkHideInputField = (data: ConversationT) => {
+    const getLastItem =
+      data?.conversation_parts?.[data?.conversation_parts?.length - 1]
+
+    return (
+      getLastItem?.part_type === 'attribute_collector' &&
+      !getLastItem?.form?.attribute_collector_locked
+    )
+  }
+
   async function callConversations() {
     try {
       const response = await backendPost(
@@ -68,10 +79,7 @@ function Chatview() {
         onUpdateChatviewState({
           conversation: response?.data,
           loading: false,
-          hideInputfield:
-            response?.data?.conversation_parts?.[
-              response?.data?.conversation_parts?.length - 1
-            ]?.part_type === 'attribute_collector',
+          hideInputfield: checkHideInputField(response?.data),
         })
         if (!response?.data?.read) {
           callConversationsRead() //TO UPDATE AS READ
@@ -95,10 +103,7 @@ function Chatview() {
         onUpdateChatviewState({
           conversation: response?.data,
           loading: false,
-          hideInputfield:
-            response?.data?.conversation_parts?.[
-              response?.data?.conversation_parts?.length - 1
-            ]?.part_type === 'attribute_collector',
+          hideInputfield: checkHideInputField(response?.data),
         })
       } else {
         onUpdateChatviewState({ loading: false })
@@ -122,7 +127,7 @@ function Chatview() {
     await callNewMessage({
       formReplay: payload,
       url: `${apiEndpoints.CONVERSATIONS}/${chatbot?.chatView?.conversation?.id}/form`,
-      callBack: callDelayedConversation,
+      callBack: () => callDelayedConversation(true),
       ignoreConversationUpdate: false,
     })
   }, [])

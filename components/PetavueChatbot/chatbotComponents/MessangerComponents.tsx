@@ -182,7 +182,10 @@ const AttributeCollector = (props: AttributeCollectorPropsT) => {
             >
               <input
                 value={eachAttribute?.value || ''}
-                disabled={form?.attribute_collector_locked}
+                disabled={
+                  form?.attribute_collector_locked ||
+                  loadingItem === eachAttribute?.identifier
+                }
                 id={eachAttribute?.identifier}
                 placeholder={eachAttribute?.placeholder}
                 onChange={(e) => {
