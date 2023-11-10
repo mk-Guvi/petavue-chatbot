@@ -14,7 +14,7 @@ import { appService } from '../appService'
 import { BlockT } from '@/components/PetavueChatbot/Chatbot.types'
 import { uuid } from 'uuidv4'
 import dayjs from 'dayjs'
-import { OnQuickReplayPayloadT } from '@/components/PetavueChatbot/Chatview'
+import { OnFormReplayPayloadT, OnQuickReplayPayloadT } from '@/components/PetavueChatbot/Chatview'
 
 export const useChatbot = () => {
   const { chatbot } = useGlobalData()
@@ -147,6 +147,7 @@ type NewConversationStateT = {
 export type CallNewMessagePayloadT = {
   url?: string
   block?: BlockT
+  formReplay?:OnFormReplayPayloadT
   callBack?: Function
   ignoreConversationUpdate?: boolean
   quickReplay?: OnQuickReplayPayloadT
@@ -165,6 +166,7 @@ export const useNewConversation = () => {
       block = state?.block,
       callBack,
       quickReplay,
+      formReplay
     } = payload
     try {
       if (block?.type === 'attachmentList') {
@@ -181,7 +183,9 @@ export const useNewConversation = () => {
           payload['created_at'] = formattedDate
           
         }
-        if (block) {
+        if(formReplay){
+          payload['form_params'] = JSON.stringify(formReplay)     
+        }else if (block) {
           payload['blocks'] = JSON.stringify([block])    
           payload["snapshot_id"]= 29496972
         } else if (quickReplay) {

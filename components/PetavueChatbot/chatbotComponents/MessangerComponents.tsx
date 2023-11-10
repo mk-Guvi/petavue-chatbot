@@ -13,7 +13,7 @@ import {
 
 import Image from 'next/image'
 import { isValidEmail } from '@/utils'
-import { OnQuickReplayPayloadT } from '../Chatview'
+import { OnFormReplayPayloadT, OnQuickReplayPayloadT } from '../Chatview'
 
 const getLabelAndPlaceholder = (attribute: AttributesT, form?: FormT) => {
   if (
@@ -100,13 +100,15 @@ const BlocksRenderer = (props: BlocksRendererPropsT) => {
 
 type AttributeCollectorPropsT = {
   form: FormT
+  onFormReplay?: (payload: OnFormReplayPayloadT) => Promise<void>
+  id?: string
 }
 
 const AttributeCollector = (props: AttributeCollectorPropsT) => {
-  const { form } = props
+  const { form, id = '', onFormReplay } = props
   const [state, setState] = useState<FormT>(form)
   const [error, setError] = useState<Record<string, string>>({})
-
+  const [loadingItem, setLoadingItem] = useState('')
   useEffect(() => {
     if (form)
       setState({
@@ -133,7 +135,7 @@ const AttributeCollector = (props: AttributeCollectorPropsT) => {
     })
   }
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     let errorObj: Record<string, string> = {}
     let hasError = false
     state?.attributes?.forEach((each) => {
@@ -147,8 +149,14 @@ const AttributeCollector = (props: AttributeCollectorPropsT) => {
       }
     })
     setError(errorObj)
-    if (!hasError) {
-      //Call the Submit
+    if (!hasError && onFormReplay) {
+      setLoadingItem(state?.attributes?.[0]?.identifier || '')
+      await onFormReplay({
+        conversation_part_id: id,
+        identifier: state?.attributes?.[0]?.identifier || '',
+        value: state?.attributes?.[0].value || '',
+      })
+      setLoadingItem('')
     }
   }
   return (
@@ -168,7 +176,7 @@ const AttributeCollector = (props: AttributeCollectorPropsT) => {
             <div
               className={`inline-flex   items-center w-full ${
                 form?.attribute_collector_locked
-                  ? 'cursor-not-allowed border-2 rounded-md '
+                  ? 'cursor-not-allowed border-2 rounded-md bg-gray-100'
                   : ''
               }`}
             >
@@ -187,14 +195,23 @@ const AttributeCollector = (props: AttributeCollectorPropsT) => {
                 }`}
               />
               {form?.attribute_collector_locked ? (
-                <Icon icon="check" className="text-green-900 mr-2" />
+                <Icon icon="check" className="text-green-700  mr-2" />
               ) : (
-                <div
-                  className="bg-blue-500 h-[2.8rem] cursor-pointer inline-flex justify-center border-blue-500 border-2 items-center w-10 rounded-r text-white"
+                <button
+                  className={`bg-blue-500 h-[2.8rem] ${
+                    loadingItem === eachAttribute?.identifier
+                      ? 'cursor-not-allowed'
+                      : 'cursor-pointer'
+                  } inline-flex justify-center border-blue-500 border-2 items-center  w-10 rounded-r text-white`}
                   onClick={onSubmit}
+                  disabled={loadingItem === eachAttribute?.identifier}
                 >
-                  <Icon icon="chevron-right" />
-                </div>
+                  {loadingItem === eachAttribute?.identifier ? (
+                    <CircularLoader className="!h-4 text-white !w-4" />
+                  ) : (
+                    <Icon icon="chevron-right" />
+                  )}
+                </button>
               )}
             </div>
             {error?.[eachAttribute?.identifier] ? (
@@ -246,11 +263,11 @@ const ReplyOptionRenderer = (props: {
 type MesaggeRendererPropsT = {
   message: ConversationT
   loading?: boolean
-
+  onFormReplay?: (payload: OnFormReplayPayloadT) => Promise<void>
   onQuickReplay?: (payload: OnQuickReplayPayloadT) => void
 }
 export const MesaggeRenderer = (props: MesaggeRendererPropsT) => {
-  const { loading, message, onQuickReplay } = props
+  const { loading, message, onFormReplay, onQuickReplay } = props
   const elementRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -297,7 +314,11 @@ export const MesaggeRenderer = (props: MesaggeRendererPropsT) => {
                 )}
               </Fragment>
             ) : eachMessage?.part_type === 'attribute_collector' ? (
-              <AttributeCollector form={eachMessage?.form || {}} />
+              <AttributeCollector
+                form={eachMessage?.form || {}}
+                id={eachMessage?.id}
+                onFormReplay={onFormReplay}
+              />
             ) : (
               <BlocksRenderer
                 blocks={eachMessage?.blocks}

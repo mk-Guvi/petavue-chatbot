@@ -23,6 +23,11 @@ export type OnQuickReplayPayloadT = {
   id: string
   replay_option: ReplyOptionT
 }
+export type OnFormReplayPayloadT = {
+  identifier: string
+  value: string
+  conversation_part_id: string
+}
 function Chatview() {
   const { chatbot, getCommonPayload, onUpdateChatviewState } = useChatbot()
   const [replayLoading, setReplayLoading] = useState(
@@ -113,6 +118,15 @@ function Chatview() {
     })
   }, [])
 
+  const onFormReplay = useCallback(async (payload: OnFormReplayPayloadT) => {
+    await callNewMessage({
+      formReplay: payload,
+      url: `${apiEndpoints.CONVERSATIONS}/${chatbot?.chatView?.conversation?.id}/form`,
+      callBack: callDelayedConversation,
+      ignoreConversationUpdate: false,
+    })
+  }, [])
+
   return (
     <Fragment>
       <ChatHeader allowToggle />
@@ -132,6 +146,7 @@ function Chatview() {
                 ...chatbot?.chatView?.conversation,
               }}
               onQuickReplay={onQuickReplay}
+              onFormReplay={onFormReplay}
             />
             {newConversationState?.block ? (
               <MesaggeRenderer
