@@ -46,7 +46,7 @@ function MessageList() {
   const [conversations, setConverstions] = useState(chatbot?.conversations)
   const [pageDetails, setPageDetails] = useState<PageDetailsT>({})
   const [error, setError] = useState('')
-  const [hasMore, setHasMore] = useState(true)
+  const [hasMore, setHasMore] = useState(false)
   const [changeListner, setChangeListner] = useState(0)
 
   useEffect(() => {
@@ -107,7 +107,7 @@ function MessageList() {
             })
             return data
           })
-
+          setHasMore(!!response?.data?.pages?.next)
           setPageDetails(response?.data?.pages)
         }
       }
