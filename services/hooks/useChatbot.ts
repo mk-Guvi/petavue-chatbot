@@ -11,7 +11,7 @@ import { generateBaseUrl } from '@/utils'
 import { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { appService } from '../appService'
-import { BlockT } from '@/components/PetavueChatbot/Chatbot.types'
+import { BlockT, ConversationT } from '@/components/PetavueChatbot/Chatbot.types'
 import { uuid } from 'uuidv4'
 import dayjs from 'dayjs'
 import { OnFormReplayPayloadT, OnQuickReplayPayloadT } from '@/components/PetavueChatbot/Chatview'
@@ -158,7 +158,15 @@ export const useNewConversation = () => {
     loading: false,
     block: null,
   })
+  const checkHideInputField = (data: ConversationT) => {
+    const getLastItem =
+      data?.conversation_parts?.[data?.conversation_parts?.length - 1]
 
+    return (
+      getLastItem?.part_type === 'attribute_collector' &&
+      !getLastItem?.form?.attribute_collector_locked
+    )
+  }
   async function callNewMessage(payload: CallNewMessagePayloadT) {
     const {
       ignoreConversationUpdate,
@@ -208,7 +216,7 @@ export const useNewConversation = () => {
                 ? chatbot?.chatView?.conversation
                 : response?.data,
               loading: false,
-              hideInputfield: false,
+              hideInputfield: checkHideInputField(response?.data),
               isNewChannel: true,
             },
             route: 'chat-view',
@@ -237,5 +245,6 @@ export const useNewConversation = () => {
     newConversationState: state,
     handleNewConversationState,
     callNewMessage,
+    checkHideInputField
   }
 }

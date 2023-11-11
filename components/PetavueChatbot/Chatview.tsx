@@ -38,6 +38,7 @@ function Chatview() {
     newConversationState,
     handleNewConversationState,
     callNewMessage,
+    checkHideInputField
   } = useNewConversation()
 
   useEffect(() => {
@@ -58,15 +59,7 @@ function Chatview() {
     }, 5000)
   }
 
-  const checkHideInputField = (data: ConversationT) => {
-    const getLastItem =
-      data?.conversation_parts?.[data?.conversation_parts?.length - 1]
-
-    return (
-      getLastItem?.part_type === 'attribute_collector' &&
-      !getLastItem?.form?.attribute_collector_locked
-    )
-  }
+  
 
   async function callConversations() {
     try {
