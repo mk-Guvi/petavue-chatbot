@@ -241,7 +241,7 @@ const ReplyOptionRenderer = (props: {
     if (option?.uuid && props?.onQuickReplay) {
       props?.onQuickReplay({
         id: props?.messageId,
-        replay_option: { ...option },
+        reply_option: { ...option },
       })
       setShowOption(option?.uuid || '')
     }

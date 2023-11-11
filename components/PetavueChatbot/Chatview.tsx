@@ -21,7 +21,7 @@ import { updateChatviewState } from '@/redux/slices'
 
 export type OnQuickReplayPayloadT = {
   id: string
-  replay_option: ReplyOptionT
+  reply_option: ReplyOptionT
 }
 export type OnFormReplayPayloadT = {
   identifier: string
